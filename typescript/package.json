@@ -1,0 +1,27 @@
+{
+  "name": "statis-ai",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Statis — agent execution infrastructure",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/tests/client.test.js",
+    "prepare": "npm run build"
+  },
+  "keywords": ["ai", "agents", "statis", "governance", "policy"],
+  "license": "MIT",
+  "homepage": "https://statis.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/statis-ai/statis-sdk"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
