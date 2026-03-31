@@ -2,6 +2,7 @@
 
 from ._models import ActionDeniedError, ActionEscalatedError, ActionTimeoutError, Receipt, StatisError
 from .client import StatisClient
+from .integrations.crewai import StatisActionTool
 
 __all__ = [
     "StatisClient",
@@ -10,4 +11,5 @@ __all__ = [
     "ActionDeniedError",
     "ActionEscalatedError",
     "ActionTimeoutError",
+    "StatisActionTool",
 ]
