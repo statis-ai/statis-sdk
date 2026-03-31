@@ -43,12 +43,40 @@ def verify(receipt_id: str, api_url: str = "https://api.statis.dev") -> int:
         return 1
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Verify a Statis receipt")
+def _main_verify(args: list[str]) -> None:
+    parser = argparse.ArgumentParser(prog="statis verify", description="Verify a Statis receipt")
     parser.add_argument("receipt_id", help="Receipt ID to verify")
     parser.add_argument("--api-url", default="https://api.statis.dev", help="Statis API base URL")
-    args = parser.parse_args()
-    sys.exit(verify(args.receipt_id, args.api_url))
+    parsed = parser.parse_args(args)
+    sys.exit(verify(parsed.receipt_id, parsed.api_url))
+
+
+def _main_init(args: list[str]) -> None:
+    from statis.cli_init import run_init_adapter
+
+    parser = argparse.ArgumentParser(prog="statis init", description="Scaffold Statis resources")
+    sub = parser.add_subparsers(dest="resource", required=True)
+    adapter_p = sub.add_parser("adapter", help="Scaffold a new adapter")
+    adapter_p.add_argument("--name", required=True, help="Adapter name (e.g. MyAdapter, notion)")
+    adapter_p.add_argument(
+        "--action-types",
+        dest="action_types",
+        default="",
+        help="Comma-separated action types (e.g. create_record,update_record)",
+    )
+    parsed = parser.parse_args(args)
+    sys.exit(run_init_adapter(parsed.name, parsed.action_types))
+
+
+def main():
+    argv = sys.argv[1:]
+    if argv and argv[0] == "init":
+        _main_init(argv[1:])
+    else:
+        # Default: verify (backward-compatible — `statis verify <id>` and `statis <id>` both work)
+        if argv and argv[0] == "verify":
+            argv = argv[1:]
+        _main_verify(argv)
 
 
 if __name__ == "__main__":
