@@ -11,6 +11,7 @@ All adapters live in `adapters/python/` and implement the `BaseAdapter` interfac
 | Adapter | Class | Action Types | Required Env Vars |
 |---------|-------|--------------|-------------------|
 | [Airflow](python/airflow.py) | `AirflowAdapter` | `airflow_dag_trigger` | `AIRFLOW_BASE_URL`, `AIRFLOW_USERNAME`, `AIRFLOW_PASSWORD` |
+| [MCP Proxy](python/mcp_proxy.py) | `MCPProxyAdapter` | `mcp_tool_call` | `MCP_SERVER_URL` (optional — logs only if unset) |
 | [GitHub Actions](python/github_actions.py) | `GitHubActionsAdapter` | `trigger_workflow`, `cancel_workflow_run` | `GITHUB_TOKEN` |
 | [HubSpot](python/hubspot.py) | `HubSpotAdapter` | `hubspot_update_contact`, `hubspot_create_deal` | `HUBSPOT_ACCESS_TOKEN` |
 | [Linear](python/linear.py) | `LinearAdapter` | `create_issue`, `update_issue`, `assign_issue`, `close_issue` | `LINEAR_API_KEY` |
