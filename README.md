@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://statis.dev">
-    <img src="https://raw.githubusercontent.com/statis-ai/statis-sdk/main/assets/logo.png" alt="Statis" width="72" />
+    <img src="https://raw.githubusercontent.com/statis-ai/statis-sdk/main/assets/logo.svg" alt="Statis" width="280" />
   </a>
 </p>
 
