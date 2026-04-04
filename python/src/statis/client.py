@@ -7,7 +7,16 @@ from typing import Any, Optional
 
 import httpx
 
-from ._models import ActionDeniedError, ActionEscalatedError, ActionTimeoutError, Receipt, StatisError
+from ._models import (
+    ActionDeniedError,
+    ActionEscalatedError,
+    ActionTimeoutError,
+    Receipt,
+    SimulateResult,
+    StatisActionDenied,
+    StatisActionEscalated,
+    StatisError,
+)
 
 
 class StatisClient:
@@ -87,8 +96,20 @@ class StatisClient:
         # Trigger evaluation
         resp = self._http.post(f"/actions/{aid}/evaluate")
         self._raise_for_status(resp)
+        eval_data = resp.json()
 
-        # Poll until terminal status
+        # Fast-path: evaluate response carries receipt_id and decision.
+        # Terminal decisions are resolved immediately — no polling needed.
+        eval_decision: str = eval_data.get("decision", "")
+        if eval_decision == "DENIED":
+            receipt = self.get_receipt(aid)
+            raise ActionDeniedError(reason="Action denied by policy", receipt=receipt)
+        if eval_decision == "ESCALATED":
+            raise ActionEscalatedError(action_id=aid)
+        if eval_decision == "APPROVED":
+            return self.get_receipt(aid)
+
+        # Fallback: poll until terminal status (handles unexpected states)
         deadline = time.monotonic() + (timeout or float("inf"))
         interval = poll_interval if poll_interval is not None else self._poll_interval
 
@@ -113,6 +134,30 @@ class StatisClient:
 
             time.sleep(interval)
 
+    def simulate(
+        self,
+        action_type: str,
+        entity_state: dict[str, Any],
+        parameters: dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> SimulateResult:
+        """Dry-run policy evaluation. No DB writes, no receipt."""
+        body: dict[str, Any] = {
+            "action_type": action_type,
+            "entity_state": entity_state,
+            "parameters": parameters or {},
+            "context": context or {},
+        }
+        resp = self._http.post("/actions/simulate", json=body)
+        self._raise_for_status(resp)
+        data = resp.json()
+        return SimulateResult(
+            decision=data["decision"],
+            rule_id=data.get("rule_id"),
+            rule_version=data.get("rule_version"),
+            reason=data["reason"],
+        )
+
     def get_action_status(self, action_id: str) -> str:
         """Return the current status string for an action (e.g. 'ESCALATED', 'COMPLETED')."""
         resp = self._http.get(f"/actions/{action_id}")
@@ -124,6 +169,46 @@ class StatisClient:
         resp = self._http.get(f"/receipts/{action_id}")
         self._raise_for_status(resp)
         return self._parse_receipt(resp.json())
+
+    def wait_for_completion(
+        self,
+        action_id: str,
+        poll_interval: float = 2.0,
+        timeout: float = 60.0,
+    ) -> Receipt:
+        """Poll GET /actions/{action_id} until the action reaches a terminal state.
+
+        Returns the Receipt on COMPLETED.
+        Raises StatisActionDenied on DENIED.
+        Raises StatisActionEscalated on ESCALATED.
+        Raises ActionTimeoutError if timeout is reached before a terminal state.
+        """
+        deadline = time.monotonic() + timeout
+
+        while True:
+            resp = self._http.get(f"/actions/{action_id}")
+            self._raise_for_status(resp)
+            data = resp.json()
+            action_status: str = data["status"]
+
+            if action_status == "COMPLETED":
+                return self.get_receipt(action_id)
+
+            if action_status == "DENIED":
+                receipt = self.get_receipt(action_id)
+                raise StatisActionDenied(
+                    action_id=action_id,
+                    rule_id=receipt.rule_id,
+                    reason=f"Action denied by policy (rule={receipt.rule_id})",
+                )
+
+            if action_status == "ESCALATED":
+                raise StatisActionEscalated(action_id=action_id)
+
+            if time.monotonic() >= deadline:
+                raise ActionTimeoutError(action_id=action_id, timeout=timeout)
+
+            time.sleep(poll_interval)
 
     def close(self) -> None:
         self._http.close()

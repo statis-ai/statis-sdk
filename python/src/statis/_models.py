@@ -4,6 +4,14 @@ from typing import Any, Optional
 
 
 @dataclass
+class SimulateResult:
+    decision: str
+    rule_id: Optional[str]
+    rule_version: Optional[str]
+    reason: str
+
+
+@dataclass
 class Receipt:
     receipt_id: str
     action_id: str
@@ -59,3 +67,30 @@ class ActionEscalatedError(Exception):
             f"Action '{action_id}' was escalated and requires human review"
         )
         self.action_id = action_id
+
+
+class StatisActionDenied(Exception):
+    """Raised by wait_for_completion() when a policy rule denies the action.
+
+    Carries the action_id, the matched rule_id (if available), and a human-readable reason.
+    """
+
+    def __init__(self, action_id: str, rule_id: Optional[str] = None, reason: str = "") -> None:
+        super().__init__(f"Action '{action_id}' denied by rule '{rule_id}': {reason}")
+        self.action_id = action_id
+        self.rule_id = rule_id
+        self.reason = reason
+
+
+class StatisActionEscalated(Exception):
+    """Raised by wait_for_completion() when the action is escalated for human review.
+
+    Carries the action_id and optional escalation_id.
+    """
+
+    def __init__(self, action_id: str, escalation_id: Optional[str] = None) -> None:
+        super().__init__(
+            f"Action '{action_id}' escalated (escalation_id={escalation_id})"
+        )
+        self.action_id = action_id
+        self.escalation_id = escalation_id

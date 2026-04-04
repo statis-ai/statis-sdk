@@ -6,6 +6,8 @@ import {
   ExecuteOptions,
   ProposeOptions,
   Receipt,
+  SimulateOptions,
+  SimulateResult,
   StatisError,
 } from "./types";
 
@@ -89,6 +91,23 @@ export class StatisClient {
 
       await sleep(pollInterval * 1000);
     }
+  }
+
+  /** Dry-run policy evaluation. No DB writes, no receipt. */
+  async simulate(options: SimulateOptions): Promise<SimulateResult> {
+    const body = {
+      action_type: options.action_type,
+      entity_state: options.entity_state ?? {},
+      parameters: options.parameters ?? {},
+      context: options.context ?? {},
+    };
+    const data = await this._post("/actions/simulate", body);
+    return {
+      decision: data["decision"] as string,
+      rule_id: (data["rule_id"] as string | null) ?? null,
+      rule_version: (data["rule_version"] as string | null) ?? null,
+      reason: data["reason"] as string,
+    };
   }
 
   /** Return the current status string for an action (e.g. 'ESCALATED', 'COMPLETED'). */
