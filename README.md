@@ -1,10 +1,6 @@
-<p align="center">
-  <a href="https://statis.dev">
-    <img src="https://raw.githubusercontent.com/statis-ai/statis-sdk/main/assets/logo.svg" alt="Statis" width="300" />
-  </a>
-</p>
-
-<h1 align="center">Statis SDK</h1>
+<a href="https://statis.dev">
+  <img src="https://raw.githubusercontent.com/statis-ai/statis-sdk/main/assets/logo.svg" alt="Statis" width="100%" />
+</a>
 
 <p align="center">
   <b>The governance layer between AI agents and production systems.</b><br/>
